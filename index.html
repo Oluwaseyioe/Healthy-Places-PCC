@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/MarkerCluster.css">
+        <link rel="stylesheet" href="css/MarkerCluster.Default.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Healthy Street Test Map</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet.markercluster.js"></script>
+        <script src="data/HealthyStreetProjectDemographyLSOA_2021_1.js"></script>
+        <script src="data/HealthyStreetProjectSchool_Buffer_2.js"></script>
+        <script src="data/HealthyStreetProjectCrime2023_Drugs_1_3.js"></script>
+        <script src="data/HealthyStreetProjectCrime2023_4.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        })
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var title = new L.Control({'position':'topright'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+        title.update = function () {
+            this._div.innerHTML = '<h2>Healthy Street Test Map</h2>';
+        };
+        title.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+            if (bounds_group.getLayers().length) {
+                map.fitBounds(bounds_group.getBounds());
+            }
+            map.setMaxBounds(map.getBounds());
+        }
+        map.createPane('pane_OpenStreetMap_0');
+        map.getPane('pane_OpenStreetMap_0').style.zIndex = 400;
+        var layer_OpenStreetMap_0 = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OpenStreetMap_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OpenStreetMap_0;
+        map.addLayer(layer_OpenStreetMap_0);
+        function pop_HealthyStreetProjectDemographyLSOA_2021_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">geography code</th>\
+                        <td class="visible-with-data" id="census2021_ts007a_lsoa_csv_geography_code">' + (feature.properties['census2021_ts007a_lsoa_csv_geography_code'] !== null ? autolinker.link(feature.properties['census2021_ts007a_lsoa_csv_geography_code'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Age: Aged 4 years and under</th>\
+                        <td class="visible-with-data" id="census2021_ts007a_lsoa_csv_Age__Aged_4_years_and_under">' + (feature.properties['census2021_ts007a_lsoa_csv_Age__Aged_4_years_and_under'] !== null ? autolinker.link(feature.properties['census2021_ts007a_lsoa_csv_Age__Aged_4_years_and_under'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Age: Aged 5 to 9 years</th>\
+                        <td class="visible-with-data" id="census2021_ts007a_lsoa_csv_Age__Aged_5_to_9_years">' + (feature.properties['census2021_ts007a_lsoa_csv_Age__Aged_5_to_9_years'] !== null ? autolinker.link(feature.properties['census2021_ts007a_lsoa_csv_Age__Aged_5_to_9_years'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Age: Aged 10 to 14 years</th>\
+                        <td class="visible-with-data" id="census2021_ts007a_lsoa_csv_Age__Aged_10_to_14_years">' + (feature.properties['census2021_ts007a_lsoa_csv_Age__Aged_10_to_14_years'] !== null ? autolinker.link(feature.properties['census2021_ts007a_lsoa_csv_Age__Aged_10_to_14_years'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Age: Aged 15 to 19 years</th>\
+                        <td class="visible-with-data" id="census2021_ts007a_lsoa_csv_Age__Aged_15_to_19_years">' + (feature.properties['census2021_ts007a_lsoa_csv_Age__Aged_15_to_19_years'] !== null ? autolinker.link(feature.properties['census2021_ts007a_lsoa_csv_Age__Aged_15_to_19_years'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Aged_19_and_under</th>\
+                        <td>' + (feature.properties['Aged_19_and_under'] !== null ? autolinker.link(feature.properties['Aged_19_and_under'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_HealthyStreetProjectDemographyLSOA_2021_1_0(feature) {
+            if (feature.properties['Aged_19_and_under'] >= 133.000000 && feature.properties['Aged_19_and_under'] <= 283.000000 ) {
+                return {
+                pane: 'pane_HealthyStreetProjectDemographyLSOA_2021_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,235,226,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Aged_19_and_under'] >= 283.000000 && feature.properties['Aged_19_and_under'] <= 341.000000 ) {
+                return {
+                pane: 'pane_HealthyStreetProjectDemographyLSOA_2021_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(251,180,185,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Aged_19_and_under'] >= 341.000000 && feature.properties['Aged_19_and_under'] <= 400.000000 ) {
+                return {
+                pane: 'pane_HealthyStreetProjectDemographyLSOA_2021_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,104,161,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Aged_19_and_under'] >= 400.000000 && feature.properties['Aged_19_and_under'] <= 517.000000 ) {
+                return {
+                pane: 'pane_HealthyStreetProjectDemographyLSOA_2021_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(197,27,138,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Aged_19_and_under'] >= 517.000000 && feature.properties['Aged_19_and_under'] <= 2236.000000 ) {
+                return {
+                pane: 'pane_HealthyStreetProjectDemographyLSOA_2021_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(122,1,119,1.0)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_HealthyStreetProjectDemographyLSOA_2021_1');
+        map.getPane('pane_HealthyStreetProjectDemographyLSOA_2021_1').style.zIndex = 401;
+        map.getPane('pane_HealthyStreetProjectDemographyLSOA_2021_1').style['mix-blend-mode'] = 'normal';
+        var layer_HealthyStreetProjectDemographyLSOA_2021_1 = new L.geoJson(json_HealthyStreetProjectDemographyLSOA_2021_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_HealthyStreetProjectDemographyLSOA_2021_1',
+            layerName: 'layer_HealthyStreetProjectDemographyLSOA_2021_1',
+            pane: 'pane_HealthyStreetProjectDemographyLSOA_2021_1',
+            onEachFeature: pop_HealthyStreetProjectDemographyLSOA_2021_1,
+            style: style_HealthyStreetProjectDemographyLSOA_2021_1_0,
+        });
+        bounds_group.addLayer(layer_HealthyStreetProjectDemographyLSOA_2021_1);
+        map.addLayer(layer_HealthyStreetProjectDemographyLSOA_2021_1);
+        function pop_HealthyStreetProjectSchool_Buffer_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_HealthyStreetProjectSchool_Buffer_2_0() {
+            return {
+                pane: 'pane_HealthyStreetProjectSchool_Buffer_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(183,72,75,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_HealthyStreetProjectSchool_Buffer_2');
+        map.getPane('pane_HealthyStreetProjectSchool_Buffer_2').style.zIndex = 402;
+        map.getPane('pane_HealthyStreetProjectSchool_Buffer_2').style['mix-blend-mode'] = 'normal';
+        var layer_HealthyStreetProjectSchool_Buffer_2 = new L.geoJson(json_HealthyStreetProjectSchool_Buffer_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_HealthyStreetProjectSchool_Buffer_2',
+            layerName: 'layer_HealthyStreetProjectSchool_Buffer_2',
+            pane: 'pane_HealthyStreetProjectSchool_Buffer_2',
+            onEachFeature: pop_HealthyStreetProjectSchool_Buffer_2,
+            style: style_HealthyStreetProjectSchool_Buffer_2_0,
+        });
+        bounds_group.addLayer(layer_HealthyStreetProjectSchool_Buffer_2);
+        map.addLayer(layer_HealthyStreetProjectSchool_Buffer_2);
+        function pop_HealthyStreetProjectCrime2023_Drugs_1_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Month</th>\
+                        <td class="visible-with-data" id="Month">' + (feature.properties['Month'] !== null ? autolinker.link(feature.properties['Month'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">LSOA name</th>\
+                        <td>' + (feature.properties['LSOA_name'] !== null ? autolinker.link(feature.properties['LSOA_name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Context</th>\
+                        <td class="visible-with-data" id="Context">' + (feature.properties['Context'] !== null ? autolinker.link(feature.properties['Context'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_HealthyStreetProjectCrime2023_Drugs_1_3_0() {
+            return {
+                pane: 'pane_HealthyStreetProjectCrime2023_Drugs_1_3',
+                radius: 8.000000000000004,
+                opacity: 1,
+                color: 'rgba(51,160,44,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(84,176,74,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_HealthyStreetProjectCrime2023_Drugs_1_3');
+        map.getPane('pane_HealthyStreetProjectCrime2023_Drugs_1_3').style.zIndex = 403;
+        map.getPane('pane_HealthyStreetProjectCrime2023_Drugs_1_3').style['mix-blend-mode'] = 'normal';
+        var layer_HealthyStreetProjectCrime2023_Drugs_1_3 = new L.geoJson(json_HealthyStreetProjectCrime2023_Drugs_1_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_HealthyStreetProjectCrime2023_Drugs_1_3',
+            layerName: 'layer_HealthyStreetProjectCrime2023_Drugs_1_3',
+            pane: 'pane_HealthyStreetProjectCrime2023_Drugs_1_3',
+            onEachFeature: pop_HealthyStreetProjectCrime2023_Drugs_1_3,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_HealthyStreetProjectCrime2023_Drugs_1_3_0(feature));
+            },
+        });
+        var cluster_HealthyStreetProjectCrime2023_Drugs_1_3 = new L.MarkerClusterGroup({showCoverageOnHover: false,
+            spiderfyDistanceMultiplier: 2});
+        cluster_HealthyStreetProjectCrime2023_Drugs_1_3.addLayer(layer_HealthyStreetProjectCrime2023_Drugs_1_3);
+
+        bounds_group.addLayer(layer_HealthyStreetProjectCrime2023_Drugs_1_3);
+        cluster_HealthyStreetProjectCrime2023_Drugs_1_3.addTo(map);
+        function pop_HealthyStreetProjectCrime2023_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Month</th>\
+                        <td class="visible-with-data" id="Month">' + (feature.properties['Month'] !== null ? autolinker.link(feature.properties['Month'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">LSOA name</th>\
+                        <td class="visible-with-data" id="LSOA_name">' + (feature.properties['LSOA_name'] !== null ? autolinker.link(feature.properties['LSOA_name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Crime type</th>\
+                        <td class="visible-with-data" id="Crime_type">' + (feature.properties['Crime_type'] !== null ? autolinker.link(feature.properties['Crime_type'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_HealthyStreetProjectCrime2023_4_0() {
+            return {
+                pane: 'pane_HealthyStreetProjectCrime2023_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(114,155,111,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_HealthyStreetProjectCrime2023_4');
+        map.getPane('pane_HealthyStreetProjectCrime2023_4').style.zIndex = 404;
+        map.getPane('pane_HealthyStreetProjectCrime2023_4').style['mix-blend-mode'] = 'normal';
+        var layer_HealthyStreetProjectCrime2023_4 = new L.geoJson(json_HealthyStreetProjectCrime2023_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_HealthyStreetProjectCrime2023_4',
+            layerName: 'layer_HealthyStreetProjectCrime2023_4',
+            pane: 'pane_HealthyStreetProjectCrime2023_4',
+            onEachFeature: pop_HealthyStreetProjectCrime2023_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_HealthyStreetProjectCrime2023_4_0(feature));
+            },
+        });
+        var cluster_HealthyStreetProjectCrime2023_4 = new L.MarkerClusterGroup({showCoverageOnHover: false,
+            spiderfyDistanceMultiplier: 2});
+        cluster_HealthyStreetProjectCrime2023_4.addLayer(layer_HealthyStreetProjectCrime2023_4);
+
+        bounds_group.addLayer(layer_HealthyStreetProjectCrime2023_4);
+        cluster_HealthyStreetProjectCrime2023_4.addTo(map);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        var baseMaps = {};
+        var overlaysTree = [
+            {label: '<img src="legend/HealthyStreetProjectCrime2023_4.png" /> Healthy Street Project — Crime2023', layer: cluster_HealthyStreetProjectCrime2023_4},
+            {label: '<img src="legend/HealthyStreetProjectCrime2023_Drugs_1_3.png" /> Healthy Street Project — Crime2023_Drugs_1', layer: cluster_HealthyStreetProjectCrime2023_Drugs_1_3},
+            {label: '<img src="legend/HealthyStreetProjectSchool_Buffer_2.png" /> Healthy Street Project — School_Buffer', layer: layer_HealthyStreetProjectSchool_Buffer_2},
+            {label: 'Healthy Street Project Demography — LSOA_2021<br /><table><tr><td style="text-align: center;"><img src="legend/HealthyStreetProjectDemographyLSOA_2021_1_1332830.png" /></td><td>133 - 283</td></tr><tr><td style="text-align: center;"><img src="legend/HealthyStreetProjectDemographyLSOA_2021_1_2833411.png" /></td><td>283 - 341</td></tr><tr><td style="text-align: center;"><img src="legend/HealthyStreetProjectDemographyLSOA_2021_1_3414002.png" /></td><td>341 - 400</td></tr><tr><td style="text-align: center;"><img src="legend/HealthyStreetProjectDemographyLSOA_2021_1_4005173.png" /></td><td>400 - 517</td></tr><tr><td style="text-align: center;"><img src="legend/HealthyStreetProjectDemographyLSOA_2021_1_51722364.png" /></td><td>517 - 2236</td></tr></table>', layer: layer_HealthyStreetProjectDemographyLSOA_2021_1},
+            {label: "OpenStreetMap", layer: layer_OpenStreetMap_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: false, 
+        });
+        lay.addTo(map);
+		document.addEventListener("DOMContentLoaded", function() {
+            // set new Layers List height which considers toggle icon
+            function newLayersListHeight() {
+                var layerScrollbarElement = document.querySelector('.leaflet-control-layers-scrollbar');
+                if (layerScrollbarElement) {
+                    var layersListElement = document.querySelector('.leaflet-control-layers-list');
+                    var originalHeight = layersListElement.style.height 
+                        || window.getComputedStyle(layersListElement).height;
+                    var newHeight = parseFloat(originalHeight) - 50;
+                    layersListElement.style.height = newHeight + 'px';
+                }
+            }
+            var isLayersListExpanded = true;
+            var controlLayersElement = document.querySelector('.leaflet-control-layers');
+            var toggleLayerControl = document.querySelector('.leaflet-control-layers-toggle');
+            // toggle Collapsed/Expanded and apply new Layers List height
+            toggleLayerControl.addEventListener('click', function() {
+                if (isLayersListExpanded) {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                } else {
+                    controlLayersElement.classList.add('leaflet-control-layers-expanded');
+                }
+                isLayersListExpanded = !isLayersListExpanded;
+                newLayersListHeight()
+            });	
+			// apply new Layers List height if toggle layerstree
+			if (controlLayersElement) {
+				controlLayersElement.addEventListener('click', function(event) {
+					var toggleLayerHeaderPointer = event.target.closest('.leaflet-layerstree-header-pointer span');
+					if (toggleLayerHeaderPointer) {
+						newLayersListHeight();
+					}
+				});
+			}
+            // Collapsed/Expanded at Start to apply new height
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            // Collapsed touch/small screen
+            var isSmallScreen = window.innerWidth < 650;
+            if (isSmallScreen) {
+                setTimeout(function() {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                    isLayersListExpanded = !isLayersListExpanded;
+                }, 500);
+            }  
+        });       
+        setBounds();
+        </script>
+    </body>
+</html>
