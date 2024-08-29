@@ -41,7 +41,6 @@
         <script src="data/HealthyStreetProjectDemographyLSOA_2021_1.js"></script>
         <script src="data/HealthyStreetProjectSchool_Buffer_2.js"></script>
         <script src="data/HealthyStreetProjectCrime2023_Drugs_1_3.js"></script>
-        <script src="data/HealthyStreetProjectCrime2023_4.js"></script>
         <script>
         var highlightLayer;
         function highlightFeature(e) {
@@ -381,78 +380,6 @@
 
         bounds_group.addLayer(layer_HealthyStreetProjectCrime2023_Drugs_1_3);
         cluster_HealthyStreetProjectCrime2023_Drugs_1_3.addTo(map);
-        function pop_HealthyStreetProjectCrime2023_4(feature, layer) {
-            layer.on({
-                mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
-                    }
-                },
-                mouseover: highlightFeature,
-            });
-            var popupContent = '<table>\
-                    <tr>\
-                        <th scope="row">Month</th>\
-                        <td class="visible-with-data" id="Month">' + (feature.properties['Month'] !== null ? autolinker.link(feature.properties['Month'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <th scope="row">LSOA name</th>\
-                        <td class="visible-with-data" id="LSOA_name">' + (feature.properties['LSOA_name'] !== null ? autolinker.link(feature.properties['LSOA_name'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <th scope="row">Crime type</th>\
-                        <td class="visible-with-data" id="Crime_type">' + (feature.properties['Crime_type'] !== null ? autolinker.link(feature.properties['Crime_type'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        function style_HealthyStreetProjectCrime2023_4_0() {
-            return {
-                pane: 'pane_HealthyStreetProjectCrime2023_4',
-                radius: 4.0,
-                opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
-                dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1,
-                fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(114,155,111,1.0)',
-                interactive: true,
-            }
-        }
-        map.createPane('pane_HealthyStreetProjectCrime2023_4');
-        map.getPane('pane_HealthyStreetProjectCrime2023_4').style.zIndex = 404;
-        map.getPane('pane_HealthyStreetProjectCrime2023_4').style['mix-blend-mode'] = 'normal';
-        var layer_HealthyStreetProjectCrime2023_4 = new L.geoJson(json_HealthyStreetProjectCrime2023_4, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_HealthyStreetProjectCrime2023_4',
-            layerName: 'layer_HealthyStreetProjectCrime2023_4',
-            pane: 'pane_HealthyStreetProjectCrime2023_4',
-            onEachFeature: pop_HealthyStreetProjectCrime2023_4,
-            pointToLayer: function (feature, latlng) {
-                var context = {
-                    feature: feature,
-                    variables: {}
-                };
-                return L.circleMarker(latlng, style_HealthyStreetProjectCrime2023_4_0(feature));
-            },
-        });
-        var cluster_HealthyStreetProjectCrime2023_4 = new L.MarkerClusterGroup({showCoverageOnHover: false,
-            spiderfyDistanceMultiplier: 2});
-        cluster_HealthyStreetProjectCrime2023_4.addLayer(layer_HealthyStreetProjectCrime2023_4);
-
-        bounds_group.addLayer(layer_HealthyStreetProjectCrime2023_4);
-        cluster_HealthyStreetProjectCrime2023_4.addTo(map);
         var osmGeocoder = new L.Control.Geocoder({
             collapsed: true,
             position: 'topleft',
@@ -465,7 +392,6 @@
         .title += 'Search for a place';
         var baseMaps = {};
         var overlaysTree = [
-            {label: '<img src="legend/HealthyStreetProjectCrime2023_4.png" /> Healthy Street Project — Crime2023', layer: cluster_HealthyStreetProjectCrime2023_4},
             {label: '<img src="legend/HealthyStreetProjectCrime2023_Drugs_1_3.png" /> Healthy Street Project — Crime2023_Drugs_1', layer: cluster_HealthyStreetProjectCrime2023_Drugs_1_3},
             {label: '<img src="legend/HealthyStreetProjectSchool_Buffer_2.png" /> Healthy Street Project — School_Buffer', layer: layer_HealthyStreetProjectSchool_Buffer_2},
             {label: 'Healthy Street Project Demography — LSOA_2021<br /><table><tr><td style="text-align: center;"><img src="legend/HealthyStreetProjectDemographyLSOA_2021_1_1332830.png" /></td><td>133 - 283</td></tr><tr><td style="text-align: center;"><img src="legend/HealthyStreetProjectDemographyLSOA_2021_1_2833411.png" /></td><td>283 - 341</td></tr><tr><td style="text-align: center;"><img src="legend/HealthyStreetProjectDemographyLSOA_2021_1_3414002.png" /></td><td>341 - 400</td></tr><tr><td style="text-align: center;"><img src="legend/HealthyStreetProjectDemographyLSOA_2021_1_4005173.png" /></td><td>400 - 517</td></tr><tr><td style="text-align: center;"><img src="legend/HealthyStreetProjectDemographyLSOA_2021_1_51722364.png" /></td><td>517 - 2236</td></tr></table>', layer: layer_HealthyStreetProjectDemographyLSOA_2021_1},
